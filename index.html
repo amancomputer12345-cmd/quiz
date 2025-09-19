@@ -108,22 +108,34 @@ let currentIndex = 0;
 let score = 0;
 
 // Load CSV dynamically
-function loadCSV() {
-  Papa.parse("fq.csv", {
-    download: true,
-    header: true,
-    complete: function(results) {
-      results.data.forEach(row => {
-        if (!row.Difficulty) return;
-        let level = row.Difficulty.trim();
-        if (level === "Easy") quizData.Easy.push(row);
-        else if (level === "Medium") quizData.Medium.push(row);
-        else if (level === "Hard") quizData.Hard.push(row);
-      });
-      startLevel("Easy");
+Papa.parse("fq.csv", {
+  download: true,
+  header: true,
+  skipEmptyLines: true,   // <---- ADD THIS
+  complete: function(results) {
+    if (!results.data || results.data.length === 0) {
+      console.error("⚠️ CSV loaded but no data found. Check file path or headers.");
+      alert("CSV not loaded. Make sure fq.csv is in the same folder as index.html");
+      return;
     }
-  });
-}
+
+    results.data.forEach(row => {
+      if (!row.Difficulty || !row.Question) return; // <---- EXTRA SAFETY
+      let level = row.Difficulty.trim();
+      if (level === "Easy") quizData.Easy.push(row);
+      else if (level === "Medium") quizData.Medium.push(row);
+      else if (level === "Hard") quizData.Hard.push(row);
+    });
+
+    console.log("✅ Parsed data:", results.data);
+    startLevel("Easy");
+  },
+  error: function(err) {
+    console.error("❌ PapaParse error:", err);
+    alert("Could not load fq.csv. Check console for details.");
+  }
+});
+
 
 function getRandomQuestions(level) {
   let all = quizData[level] || [];
