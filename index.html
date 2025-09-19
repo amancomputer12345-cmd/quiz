@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Quiz Game | Wize Wealth</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#D5AD2A',
+            secondary: '#1E1E1E'
+          },
+          borderRadius: {
+            'button': '8px'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: 'Poppins', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Desktop Navbar -->
+  <nav class="hidden md:flex fixed top-0 left-0 w-full bg-[#121212] z-50 border-b border-gray-800 h-16 items-center px-8" style="justify-content: center;">
+    <div class="font-['Poppins'] flex flex-1 justify-end items-center space-x-24 max-w-xs">
+      <a href="../index.html" class="text-gray-300 hover:text-primary transition text-lg">Home</a>
+      <a href="../News.html" class="text-gray-300 hover:text-primary transition text-lg">News</a>
+    </div>
+    <div class="flex-none flex justify-center mx-44">
+      <span class="font-['Poppins'] text-primary text-2xl font-bold pointer-events-auto">Wize Wealth</span>
+    </div>
+    <div class="font-['Poppins'] flex flex-1 justify-start items-center space-x-24 max-w-xs ml-0">
+      <a href="../Invest.html" class="text-gray-300 hover:text-primary transition text-lg">Invest</a>
+      <a href="../Wizebot.html" class="text-gray-300 hover:text-primary transition text-lg">WizeBot</a>
+    </div>
+  </nav>
+
+  <!-- Mobile Header -->
+  <header class="fixed w-full left-0 top-0 bg-[#121212] z-10 p-4 border-b border-gray-800 md:hidden">
+    <h1 class="text-primary text-2xl font-bold text-center">Wize Wealth</h1>
+  </header>
+
+  <!-- Quiz Section -->
+  <main class="pt-24 md:pt-28 pb-32 px-6 flex flex-col items-center text-center">
+    <h1 class="text-3xl font-bold text-primary mb-2">💲Quiz Game &#128640;</h1>
+    <h2 id="levelHeading" class="text-xl font-semibold text-gray-300 mb-6"></h2>
+    
+    <div id="quiz" class="w-full max-w-2xl bg-[#1A1A1A] p-6 rounded-2xl shadow-lg">
+      <div id="progress" class="text-sm text-gray-400 mb-4"></div>
+      <h2 id="question" class="text-xl mb-6"></h2>
+      <div class="flex flex-col space-y-3">
+        <button id="optionA" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+        <button id="optionB" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+        <button id="optionC" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+        <button id="optionD" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Navbar -->
+  <nav class="fixed bottom-0 w-full bg-[#1A1A1A] border-t border-gray-800 z-50 md:hidden">
+    <div class="font-['Poppins'] flex justify-around items-center h-16">
+      <a href="../index.html" class="flex flex-col items-center justify-center w-1/4 h-full">
+        <i class="ri-home-5-line text-gray-400 ri-lg"></i>
+        <span class="text-xs text-gray-400 mt-1">Home</span>
+      </a>
+      <a href="News.html" class="flex flex-col items-center justify-center w-1/4 h-full">
+        <i class="ri-newspaper-line text-gray-400 ri-lg"></i>
+        <span class="text-xs text-gray-400 mt-1">News</span>
+      </a>
+      <a href="Invest.html" class="flex flex-col items-center justify-center w-1/4 h-full">
+        <i class="ri-line-chart-line text-gray-400 ri-lg"></i>
+        <span class="text-xs text-gray-400 mt-1">Invest</span>
+      </a>
+      <a href="Wizebot.html" class="flex flex-col items-center justify-center w-1/4 h-full">
+        <i class="ri-message-3-line text-gray-400 ri-lg"></i>
+        <span class="text-xs text-gray-400 mt-1">WizeBot</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Sticky Home Button -->
+  <a href="Invest.html" class="fixed bottom-24 left-4 bg-primary text-black px-4 py-2 rounded-lg shadow-lg hover:bg-yellow-400 transition z-50">
+    ⬅ Home
+  </a>
+
+  <!-- Quiz Script -->
+  <script>
+let quizData = { Easy: [], Medium: [], Hard: [] };
+let currentLevel = "Easy";
+let currentQuestions = [];
+let currentIndex = 0;
+let score = 0;
+
+// Load CSV dynamically
+function loadCSV() {
+  Papa.parse("fq.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      results.data.forEach(row => {
+        if (!row.Difficulty) return;
+        let level = row.Difficulty.trim();
+        if (level === "Easy") quizData.Easy.push(row);
+        else if (level === "Medium") quizData.Medium.push(row);
+        else if (level === "Hard") quizData.Hard.push(row);
+      });
+      startLevel("Easy");
+    }
+  });
+}
+
+function getRandomQuestions(level) {
+  let all = quizData[level] || [];
+  let shuffled = all.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(5, all.length));
+}
+
+function startLevel(level) {
+  currentLevel = level;
+  currentQuestions = getRandomQuestions(level);
+  currentIndex = 0;
+  score = 0;
+
+  document.getElementById("levelHeading").textContent =
+    (level === "Easy" ? "🌱 Easy Level" :
+     level === "Medium" ? "📈 Medium Level" :
+     "💼 Hard Level");
+
+  document.getElementById("quiz").innerHTML = `
+    <div id="progress" class="text-sm text-gray-400 mb-4"></div>
+    <h2 id="question" class="text-xl mb-6"></h2>
+    <div class="flex flex-col space-y-3">
+      <button id="optionA" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+      <button id="optionB" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+      <button id="optionC" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+      <button id="optionD" class="option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left"></button>
+    </div>
+  `;
+  showQuestion();
+}
+
+function showQuestion() {
+  let q = currentQuestions[currentIndex];
+  document.getElementById("progress").textContent =
+    `Question ${currentIndex + 1} of ${currentQuestions.length}`;
+  document.getElementById("question").textContent = q.Question;
+
+  ["A","B","C","D"].forEach(opt => {
+    let btn = document.getElementById("option"+opt);
+    btn.textContent = opt + ". " + q["Option " + opt];
+    btn.className = "option-btn bg-gray-800 py-3 px-4 rounded-lg hover:bg-gray-700 transition text-left";
+
+    btn.onclick = () => {
+      let correct = q["Correct Answer"];
+
+      // Disable all buttons to prevent multiple clicks
+      ["A","B","C","D"].forEach(o => {
+        let optionBtn = document.getElementById("option"+o);
+        optionBtn.onclick = null;
+        optionBtn.classList.add("pointer-events-none");
+      });
+
+      if (opt === correct) {
+        // Correct answer: bright green background
+        btn.classList.remove("bg-gray-800", "hover:bg-gray-700");
+        btn.classList.add("bg-green-600", "text-white", "font-semibold");
+        score++;
+      } else {
+        // Wrong answer: red background for clicked option
+        btn.classList.remove("bg-gray-800", "hover:bg-gray-700");
+        btn.classList.add("bg-red-500", "text-white", "font-semibold");
+
+        // Show correct answer: green background with reduced opacity
+        let correctBtn = document.getElementById("option"+correct);
+        correctBtn.classList.remove("bg-gray-800", "hover:bg-gray-700");
+        correctBtn.classList.add("bg-green-500", "text-white", "font-semibold", "opacity-70");
+      }
+
+      setTimeout(nextQuestion, 1200);
+    };
+  });
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < currentQuestions.length) {
+    showQuestion();
+  } else {
+    levelCompleted();
+  }
+}
+
+function levelCompleted() {
+  let message = `🎉 You scored ${score}/${currentQuestions.length} in ${currentLevel} Level.`;
+  let buttonHtml =
+    currentLevel === "Easy"
+      ? `<button onclick="startLevel('Medium')" class="mt-4 bg-primary text-black px-6 py-2 rounded-lg">Move to Next Level</button>`
+      : currentLevel === "Medium"
+      ? `<button onclick="startLevel('Hard')" class="mt-4 bg-primary text-black px-6 py-2 rounded-lg">Move to Next Level</button>`
+      : `<button onclick="startLevel('Easy')" class="mt-4 bg-primary text-black px-6 py-2 rounded-lg">Restart Quiz</button>`;
+
+  document.getElementById("quiz").innerHTML =
+    `<h2 class="text-primary text-2xl mb-4">${message}</h2>
+     ${buttonHtml}`;
+}
+
+window.onload = loadCSV;
+</script>
+</body>
+</html>
