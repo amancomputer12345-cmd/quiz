@@ -1,9 +1,6 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "index.html", "use": "@vercel/static" },
-    { "src": "*.csv", "use": "@vercel/static" }
-  ],
+  "public": true,
   "routes": [
     { "src": "/(.*)", "dest": "/index.html" }
   ]
